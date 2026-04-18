@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trapezoidal Channel Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:          #f7f6f3;
+    --surface:     #ffffff;
+    --surface2:    #f1f0ec;
+    --border:      rgba(0,0,0,0.10);
+    --border2:     rgba(0,0,0,0.18);
+    --text:        #1a1a18;
+    --text2:       #6b6b67;
+    --text3:       #a8a8a3;
+    --accent:      #1D9E75;
+    --accent-bg:   #E1F5EE;
+    --accent-text: #085041;
+    --mono: 'DM Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:          #111110;
+      --surface:     #1c1c1a;
+      --surface2:    #242422;
+      --border:      rgba(255,255,255,0.09);
+      --border2:     rgba(255,255,255,0.16);
+      --text:        #e8e7e2;
+      --text2:       #8a8a85;
+      --text3:       #555550;
+      --accent:      #1D9E75;
+      --accent-bg:   #0a2e22;
+      --accent-text: #5DCAA5;
+    }
+  }
+
+  html, body {
+    min-height: 100vh;
+    background: var(--bg);
+    font-family: var(--sans);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2.5rem 1.25rem 4rem;
+  }
+
+  /* ── Header ── */
+  .page-header {
+    width: 100%;
+    max-width: 780px;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    border-bottom: 0.5px solid var(--border2);
+    padding-bottom: 1rem;
+  }
+  .page-title {
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: -.01em;
+  }
+  .page-sub {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+  }
+
+  /* ── Card shell ── */
+  .card {
+    width: 100%;
+    max-width: 780px;
+    background: var(--surface);
+    border: 0.5px solid var(--border2);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+
+  /* ── Two-pane layout ── */
+  .panes {
+    display: grid;
+    grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+  }
+  @media (max-width: 560px) {
+    .panes { grid-template-columns: minmax(0,1fr); }
+  }
+
+  .pane {
+    padding: 1.5rem;
+  }
+  .pane + .pane {
+    border-left: 0.5px solid var(--border);
+    background: var(--surface2);
+  }
+  @media (max-width: 560px) {
+    .pane + .pane { border-left: none; border-top: 0.5px solid var(--border); }
+  }
+
+  /* ── Section labels ── */
+  .pane-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 1.25rem;
+  }
+
+  /* ── Slider fields ── */
+  .field { margin-bottom: 1.1rem; }
+  .field-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  .field-name { font-size: 12px; color: var(--text2); }
+  .field-unit { font-size: 12px; color: var(--text3); margin-left: 3px; }
+  .field-val {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+    background: var(--surface2);
+    border: 0.5px solid var(--border);
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    width: 86px;
+    text-align: right;
+    outline: none;
+    -moz-appearance: textfield;
+    appearance: textfield;
+    transition: border-color .15s;
+  }
+  .field-val::-webkit-outer-spin-button,
+  .field-val::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .field-val:focus { border-color: var(--accent); background: var(--surface); }
+  .field-val.invalid { border-color: #E24B4A; }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 3px;
+    background: var(--border2);
+    border-radius: 99px;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--surface);
+    box-shadow: 0 0 0 1px var(--accent);
+    transition: transform .1s;
+  }
+  input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+  input[type="range"]::-moz-range-thumb {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--surface);
+    cursor: pointer;
+  }
+
+  select {
+    width: 100%;
+    font-family: var(--sans);
+    font-size: 12px;
+    color: var(--text);
+    background: var(--surface2);
+    border: 0.5px solid var(--border2);
+    border-radius: var(--radius-sm);
+    padding: 7px 10px;
+    outline: none;
+    cursor: pointer;
+    margin-top: 4px;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 28px;
+  }
+  select:focus { border-color: var(--accent); }
+
+  /* ── Canvas ── */
+  .viz-section {
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 0.5px solid var(--border);
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    border: 0.5px solid var(--border);
+  }
+
+  /* ── KPI grid ── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .kpi {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 10px 12px;
+  }
+  .kpi.wide { grid-column: 1 / -1; }
+  .kpi.featured {
+    border-color: var(--accent);
+    background: var(--accent-bg);
+  }
+  .kpi-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 5px;
+  }
+  .kpi.featured .kpi-label { color: var(--accent-text); opacity: .7; }
+  .kpi-val {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1;
+  }
+  .kpi.featured .kpi-val { font-size: 32px; color: var(--accent-text); }
+  .kpi-unit {
+    font-size: 11px;
+    color: var(--text3);
+    margin-left: 2px;
+  }
+  .kpi.featured .kpi-unit { color: var(--accent-text); opacity: .6; }
+
+  /* ── Divider ── */
+  .divider {
+    height: 0.5px;
+    background: var(--border);
+    margin: 12px 0;
+  }
+
+  /* ── Regime card ── */
+  .regime-card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 10px 12px;
+  }
+  .regime-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 6px;
+  }
+  .fr-num {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 500;
+  }
+  .badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: .04em;
+    padding: 3px 9px;
+    border-radius: 99px;
+  }
+  .b-sub  { background: #E1F5EE; color: #085041; }
+  .b-sup  { background: #FAEEDA; color: #633806; }
+  .b-crit { background: #FCEBEB; color: #791F1F; }
+  .regime-desc {
+    font-size: 11px;
+    color: var(--text2);
+    margin-top: 2px;
+  }
+
+  /* ── Secondary metrics ── */
+  .sec-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .sec {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 10px 12px;
+  }
+  .sec .kpi-val { font-size: 16px; }
+
+  /* ── Footer bar ── */
+  .card-footer {
+    border-top: 0.5px solid var(--border);
+    padding: .75rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface2);
+  }
+  .formula {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: .03em;
+  }
+  .formula span { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<header class="page-header">
+  <span class="page-title">Manning's equation</span>
+  <span class="page-sub">on a trapezoidal open channel</span>
+</header>
+
+<div class="card">
+  <div class="panes">
+
+    <!-- LEFT: Inputs -->
+    <div class="pane">
+      <div class="pane-label">Parameters</div>
+
+      <div class="field">
+        <div class="field-top">
+          <span class="field-name">Bottom width ( b )</span>
+          <span class="field-top-right"><input type="number" class="field-val" id="b_val" value="10.0" min="0.5" max="50" step="0.1"><span class="field-unit">m</span></span>
+        </div>
+        <input type="range" id="b" min="0.5" max="50" step="0.1" value="10">
+      </div>
+
+      <div class="field">
+        <div class="field-top">
+          <span class="field-name">Water depth ( y )</span>
+          <span class="field-top-right"><input type="number" class="field-val" id="y_val" value="2.0" min="0.1" max="10" step="0.1"><span class="field-unit">m</span></span>
+        </div>
+        <input type="range" id="y" min="0.1" max="10" step="0.1" value="2">
+      </div>
+
+      <div class="field">
+        <div class="field-top">
+          <span class="field-name">Side slope ( Z : 1 )</span>
+          <span class="field-top-right"><input type="number" class="field-val" id="z_val" value="2.0" min="0" max="5" step="0.5"></span><span class="field-unit">:1</span></span>
+        </div>
+        <input type="range" id="z" min="0" max="5" step="0.5" value="2">
+      </div>
+
+      <div class="field">
+        <div class="field-top">
+          <span class="field-name">Bed slope ( S )</span>
+          <span class="field-top-right"><input type="number" class="field-val" id="s_val" value="0.00500" min="0.0001" max="0.05" step="0.0001"></span>
+        </div>
+        <input type="range" id="s" min="0.0001" max="0.05" step="0.0001" value="0.005">
+      </div>
+
+      <div class="field">
+        <div class="field-top"><span class="field-name">Manning's ( n )</span></div>
+        <select id="n">
+          <option value="0.013">Smooth concrete — 0.013</option>
+          <option value="0.022">Earth canal — 0.022</option>
+          <option value="0.025">Gravel bottom — 0.025</option>
+          <option value="0.040">Natural winding stream — 0.040</option>
+        </select>
+      </div>
+
+      <div class="viz-section">
+        <div class="pane-label">Cross-section</div>
+        <canvas id="viz"></canvas>
+      </div>
+    </div>
+
+    <!-- RIGHT: Results -->
+    <div class="pane">
+      <div class="pane-label">Results</div>
+
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div class="kpi-label">Area (A)</div>
+          <div class="kpi-val"><span id="res_a">—</span><span class="kpi-unit">  m²</span></div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Wetted perimeter (P)</div>
+          <div class="kpi-val"><span id="res_p">—</span><span class="kpi-unit">  m</span></div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Hydraulic radius (R)</div>
+          <div class="kpi-val"><span id="res_r">—</span><span class="kpi-unit">  m</span></div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Velocity (V)</div>
+          <div class="kpi-val"><span id="res_v">—</span><span class="kpi-unit">  m/s</span></div>
+        </div>
+        <div class="kpi wide featured">
+          <div class="kpi-label">Discharge (Q)</div>
+          <div class="kpi-val">
+            <span id="res_q">—</span><span class="kpi-unit">  m³/s<br>
+              <span id="mcm_d">—</span>
+              <span> mcm/d = </span>
+              <span id="bcm_y">—</span>
+              <span> bcm/y</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="regime-card">
+        <div class="kpi-label">Flow regime</div>
+        <div class="regime-row">
+          <span class="fr-num" id="res_fr">—</span>
+          <div>
+            <span class="badge" id="regime_badge">—</span>
+            <div class="regime-desc" id="regime_desc">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec-grid">
+        <div class="sec">
+          <div class="kpi-label">Top width (T)</div>
+          <div class="kpi-val"><span id="res_t">—</span><span class="kpi-unit">m</span></div>
+        </div>
+        <div class="sec">
+          <div class="kpi-label">Hydraulic depth (D)</div>
+          <div class="kpi-val"><span id="res_d">—</span><span class="kpi-unit">m</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /panes -->
+
+  <div class="card-footer">
+    <span class="formula">V = (1/n) · R<sup>2/3</sup> · S<sup>1/2</sup></span>
+    <span class="formula" style="margin-left:auto">Q = V · A</span>
+    <span class="formula" style="margin-left:1rem">Fr = V / <span>√(g·D)</span></span>
+  </div>
+</div>
+
+<script>
+(function () {
+  const canvas = document.getElementById('viz');
+  const ctx    = canvas.getContext('2d');
+  const DPR    = window.devicePixelRatio || 1;
+  const CW = 340, CH = 230;
+  canvas.width  = CW * DPR;
+  canvas.height = CH * DPR;
+  canvas.style.height = CH + 'px';
+  ctx.scale(DPR, DPR);
+
+  /* ── Parameter config ── */
+  const PARAMS = {
+    b: { min: 0.5,    max: 50,   step: 0.1,    dec: 1 },
+    y: { min: 0.1,    max: 10,   step: 0.1,    dec: 1 },
+    z: { min: 0,      max: 5,    step: 0.5,    dec: 1 },
+    s: { min: 0.0001, max: 0.05, step: 0.0001, dec: 5 },
+  };
+
+  /* Read slider value */
+  function v(id) { return parseFloat(document.getElementById(id).value); }
+
+  function isDark() {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+
+  /* Clamp + snap a value to the parameter's range and step */
+  function clamp(id, raw) {
+    const p = PARAMS[id];
+    const clamped = Math.min(p.max, Math.max(p.min, raw));
+    const snapped = Math.round(clamped / p.step) * p.step;
+    return parseFloat(snapped.toFixed(p.dec + 2)); /* avoid float dust */
+  }
+
+  /* Wire each slider <-> number input bidirectionally */
+  Object.keys(PARAMS).forEach(id => {
+    const slider = document.getElementById(id);
+    const numIn  = document.getElementById(id + '_val');
+    const p      = PARAMS[id];
+
+    /* Slider moved → update number input display */
+    slider.addEventListener('input', () => {
+      numIn.value = parseFloat(slider.value).toFixed(p.dec);
+      numIn.classList.remove('invalid');
+      calc();
+    });
+
+    /* Number input typing → validate live, update slider */
+    numIn.addEventListener('input', () => {
+      const raw = parseFloat(numIn.value);
+      if (isNaN(raw) || raw < p.min || raw > p.max) {
+        numIn.classList.add('invalid');
+        return; /* don't recalc until value is in range */
+      }
+      numIn.classList.remove('invalid');
+      slider.value = raw;
+      calc();
+    });
+
+    /* On blur → clamp, snap, sync, always recalc */
+    numIn.addEventListener('blur', () => {
+      const raw = parseFloat(numIn.value);
+      const safe = isNaN(raw) ? parseFloat(slider.value) : clamp(id, raw);
+      slider.value = safe;
+      numIn.value  = safe.toFixed(p.dec);
+      numIn.classList.remove('invalid');
+      calc();
+    });
+
+    /* Enter key → commit like blur */
+    numIn.addEventListener('keydown', e => {
+      if (e.key === 'Enter') numIn.blur();
+    });
+  });
+
+  function calc() {
+    const b = v('b'), y = v('y'), z = v('z'), s = v('s');
+    const n = parseFloat(document.getElementById('n').value);
+
+    const A  = y * (b + z * y);
+    const P  = b + 2 * y * Math.sqrt(1 + z * z);
+    const R  = A / P;
+    const V  = (1 / n) * Math.pow(R, 2 / 3) * Math.pow(s, 0.5);
+    const Q  = V * A;
+    const Qm  = Q / 1000000 * 60 * 60 * 24;
+    const Qb  = Qm / 1000 * 365.25;
+    const T  = b + 2 * z * y;
+    const D  = A / T;
+    const Fr = V / Math.sqrt(9.81 * D);
+
+    document.getElementById('res_a').textContent  = A.toFixed(2);
+    document.getElementById('res_p').textContent  = P.toFixed(2);
+    document.getElementById('res_r').textContent  = R.toFixed(3);
+    document.getElementById('res_v').textContent  = V.toFixed(2);
+    document.getElementById('res_q').textContent  = Q.toFixed(2);
+    document.getElementById('mcm_d').textContent  = Qm.toFixed(2);
+    document.getElementById('bcm_y').textContent  = Qb.toFixed(2);
+    document.getElementById('res_t').textContent  = T.toFixed(2);
+    document.getElementById('res_d').textContent  = D.toFixed(3);
+    document.getElementById('res_fr').textContent = Fr.toFixed(3);
+
+    const badge = document.getElementById('regime_badge');
+    const desc  = document.getElementById('regime_desc');
+    if (Fr < 0.95) {
+      badge.textContent = 'Fr < 1';
+      badge.className   = 'badge b-sub';
+      desc.textContent  = 'Subcritical — tranquil flow';
+    } else if (Fr > 1.05) {
+      badge.textContent = 'Fr > 1';
+      badge.className   = 'badge b-sup';
+      desc.textContent  = 'Supercritical — rapid flow';
+    } else {
+      badge.textContent = 'Fr ≈ 1';
+      badge.className   = 'badge b-crit';
+      desc.textContent  = 'Critical flow';
+    }
+
+    draw(b, y, z);
+  }
+
+  function draw(b, y, z) {
+    ctx.clearRect(0, 0, CW, CH);
+
+    const dark = isDark();
+    const waterFill  = dark ? 'rgba(29,158,117,0.22)' : 'rgba(29,158,117,0.14)';
+    const waterEdge  = dark ? '#1D9E75' : '#0F6E56';
+    const earthFill  = dark ? 'rgba(136,135,128,0.18)' : 'rgba(180,178,169,0.22)';
+    const hatchClr   = dark ? 'rgba(136,135,128,0.22)' : 'rgba(140,138,130,0.30)';
+    const earthEdge  = dark ? '#6b6b67' : '#5F5E5A';
+    const dimClr     = dark ? '#555550' : '#B4B2A9';
+    const txtClr     = dark ? '#8a8a85' : '#6b6b67';
+    const accentClr  = dark ? '#1D9E75' : '#0F6E56';
+    const groundFill = dark ? 'rgba(136,135,128,0.10)' : 'rgba(180,178,169,0.13)';
+
+    /* ── Layout margins ── */
+    const mL = 48, mR = 16, mT = 16, mB = 44;
+    const dW = CW - mL - mR;
+    const dH = CH - mT - mB;
+
+    /* ── Scale to actual geometry ── */
+    const bankExt = Math.max(y * 0.45, 0.6);   /* freeboard shown above water */
+    const totalH  = y + bankExt;
+    const topW    = b + 2 * z * totalH;         /* full drawn width at top of bank */
+
+    const sx = dW / topW;
+    const sy = dH / totalH;
+
+    const cx   = mL + dW / 2;
+    const base = CH - mB;
+
+    /* channel geometry in canvas px */
+    const wBL = cx - (b / 2) * sx;
+    const wBR = cx + (b / 2) * sx;
+    const wTL = wBL - z * y * sx;
+    const wTR = wBR + z * y * sx;
+    const wTY = base - y * sy;
+
+    const cTL = wBL - z * totalH * sx;
+    const cTR = wBR + z * totalH * sx;
+    const cTY = base - totalH * sy;
+
+    /* ── Helper: fill + hatch a bank polygon ── */
+    function drawBank(pts) {
+      ctx.save();
+      ctx.beginPath();
+      pts.forEach(([px, py], i) => i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py));
+      ctx.closePath();
+      ctx.fillStyle = earthFill;
+      ctx.fill();
+      ctx.clip();
+      ctx.strokeStyle = hatchClr;
+      ctx.lineWidth = 0.75;
+      for (let hx = -CH; hx < CW + CH; hx += 8) {
+        ctx.beginPath(); ctx.moveTo(hx, 0); ctx.lineTo(hx + CH, CH); ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    /* right bank */
+    drawBank([[wBR, base], [cTR, cTY], [CW, cTY], [CW, base + 4]]);
+    /* left bank */
+    drawBank([[wBL, base], [cTL, cTY], [0, cTY], [0, base + 4]]);
+
+    /* ── Ground below channel invert ── */
+    ctx.fillStyle = groundFill;
+    ctx.fillRect(wBL, base, wBR - wBL, 6);
+
+    /* ── Water body ── */
+    ctx.fillStyle = waterFill;
+    ctx.beginPath();
+    ctx.moveTo(wBL, base); ctx.lineTo(wBR, base);
+    ctx.lineTo(wTR, wTY);  ctx.lineTo(wTL, wTY);
+    ctx.closePath(); ctx.fill();
+
+    /* ── Water surface dashed line ── */
+    ctx.save();
+    ctx.strokeStyle = waterEdge;
+    ctx.lineWidth   = 1.5;
+    ctx.setLineDash([5, 3]);
+    ctx.beginPath(); ctx.moveTo(wTL, wTY); ctx.lineTo(wTR, wTY); ctx.stroke();
+    ctx.restore();
+
+    /* ── Channel walls ── */
+    ctx.save();
+    ctx.strokeStyle = earthEdge;
+    ctx.lineWidth   = 2;
+    ctx.lineCap     = 'round';
+    ctx.lineJoin    = 'round';
+    ctx.beginPath();
+    ctx.moveTo(cTL, cTY);
+    ctx.lineTo(wBL, base);
+    ctx.lineTo(wBR, base);
+    ctx.lineTo(cTR, cTY);
+    ctx.stroke();
+    ctx.restore();
+
+    /* ── Ground datum line ── */
+    ctx.save();
+    ctx.strokeStyle = dimClr;
+    ctx.lineWidth   = 0.5;
+    ctx.beginPath(); ctx.moveTo(0, base); ctx.lineTo(CW, base); ctx.stroke();
+    ctx.restore();
+
+    /* ── dimLine helper ── */
+    function dimLine(x1, y1, x2, y2, label, side) {
+      const dx = x2 - x1, dy = y2 - y1;
+      const len = Math.sqrt(dx * dx + dy * dy);
+      if (len < 18) return;
+      const ux = dx / len, uy = dy / len;
+      const arr = 5;
+
+      ctx.save();
+      ctx.strokeStyle = dimClr;
+      ctx.lineWidth   = 0.75;
+
+      /* shaft */
+      ctx.beginPath();
+      ctx.moveTo(x1 + ux * arr, y1 + uy * arr);
+      ctx.lineTo(x2 - ux * arr, y2 - uy * arr);
+      ctx.stroke();
+
+      /* arrowheads */
+      const pw = 2.5;
+      [[x1, y1, ux, uy], [x2, y2, -ux, -uy]].forEach(([px, py, ax, ay]) => {
+        const nx = -ay, ny = ax;
+        ctx.beginPath();
+        ctx.moveTo(px + ax * arr - nx * pw, py + ay * arr - ny * pw);
+        ctx.lineTo(px, py);
+        ctx.lineTo(px + ax * arr + nx * pw, py + ay * arr + ny * pw);
+        ctx.stroke();
+      });
+
+      /* tick marks */
+      [[x1, y1], [x2, y2]].forEach(([px, py]) => {
+        const nx = -uy * 4, ny = ux * 4;
+        ctx.beginPath();
+        ctx.moveTo(px - nx, py - ny);
+        ctx.lineTo(px + nx, py + ny);
+        ctx.stroke();
+      });
+
+      /* label */
+      ctx.fillStyle = txtClr;
+      ctx.font = '500 10px "DM Mono", monospace';
+      const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+      if (side === 'below') {
+        ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+        ctx.fillText(label, mx, my + 5);
+      } else if (side === 'left') {
+        ctx.translate(mx - 10, my);
+        ctx.rotate(-Math.PI / 2);
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(label, 0, 0);
+      } else if (side === 'above') {
+        ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+        ctx.fillText(label, mx, my - 5);
+      }
+      ctx.restore();
+    }
+
+    /* ── b dimension (bottom width) ── */
+    dimLine(wBL, base + 20, wBR, base + 20, 'b = ' + b.toFixed(1) + ' m', 'below');
+
+    /* ── y dimension (water depth, left side) ── */
+    const yDimX = mL - 24;
+    ctx.save();
+    ctx.strokeStyle = dimClr;
+    ctx.lineWidth   = 0.5;
+    ctx.setLineDash([2, 2]);
+    ctx.beginPath(); ctx.moveTo(wBL, base); ctx.lineTo(yDimX, base); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(wTL, wTY);  ctx.lineTo(yDimX, wTY);  ctx.stroke();
+    ctx.restore();
+    dimLine(yDimX, base, yDimX, wTY, 'y = ' + y.toFixed(1) + ' m', 'left');
+
+    /* ── z slope box annotation (right wall) ── */
+    if (z > 0) {
+      const zBoxH = Math.min(y * sy * 0.38, 26);
+      const zBoxW = zBoxH * z;
+      const zBX   = wBR + 5;
+      const zBY   = base - zBoxH;
+
+      ctx.save();
+      ctx.strokeStyle = dimClr;
+      ctx.lineWidth   = 0.5;
+      ctx.strokeRect(zBX, zBY, zBoxW, zBoxH);
+
+      ctx.strokeStyle = accentClr;
+      ctx.lineWidth   = 0.75;
+      /* horizontal tick: z */
+      ctx.beginPath(); ctx.moveTo(zBX, base - 4); ctx.lineTo(zBX + zBoxW, base - 4); ctx.stroke();
+      /* vertical tick: 1 */
+      ctx.beginPath(); ctx.moveTo(zBX + zBoxW + 4, base); ctx.lineTo(zBX + zBoxW + 4, zBY); ctx.stroke();
+
+      ctx.fillStyle  = accentClr;
+      ctx.font       = '400 9px "DM Mono", monospace';
+      ctx.textAlign  = 'center'; ctx.textBaseline = 'bottom';
+      ctx.fillText(z.toFixed(1), zBX + zBoxW / 2, base - 6);
+      ctx.textAlign  = 'left';   ctx.textBaseline = 'middle';
+      ctx.fillText('1', zBX + zBoxW + 7, zBY + zBoxH / 2);
+      ctx.restore();
+    }
+
+    /* ── T label above water surface ── */
+    if (wTR - wTL > 40) {
+      ctx.save();
+      ctx.fillStyle    = accentClr;
+      ctx.font         = '400 9px "DM Mono", monospace';
+      ctx.textAlign    = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText('T = ' + (b + 2 * z * y).toFixed(1) + ' m', cx, wTY - 5);
+      ctx.restore();
+    }
+  }
+
+  /* Manning's n select */
+  document.getElementById('n').addEventListener('input', calc);
+
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', calc);
+
+  calc();
+})();
+</script>
+</body>
+</html>
